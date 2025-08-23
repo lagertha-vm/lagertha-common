@@ -16,46 +16,37 @@ impl<'a> ByteCursor<'a> {
         }
     }
 
-    fn take<const N: usize>(it: &mut impl Iterator<Item = u8>) -> Option<[u8; N]> {
+    fn take<const N: usize>(&mut self) -> Result<[u8; N], CursorError> {
         let mut buf = [0u8; N];
         for b in &mut buf {
-            *b = it.next()?;
+            *b = self.it.next().ok_or(CursorError::UnexpectedEof)?;
         }
-        Some(buf)
-    }
-
-    pub fn u32(&mut self) -> Result<u32, CursorError> {
-        ByteCursor::take::<4>(&mut self.it)
-            .map(u32::from_be_bytes)
-            .ok_or(CursorError::UnexpectedEof)
-    }
-
-    pub fn i32(&mut self) -> Result<i32, CursorError> {
-        ByteCursor::take::<4>(&mut self.it)
-            .map(i32::from_be_bytes)
-            .ok_or(CursorError::UnexpectedEof)
-    }
-
-    pub fn i64(&mut self) -> Result<i64, CursorError> {
-        ByteCursor::take::<8>(&mut self.it)
-            .map(i64::from_be_bytes)
-            .ok_or(CursorError::UnexpectedEof)
-    }
-
-    pub fn u16(&mut self) -> Result<u16, CursorError> {
-        ByteCursor::take::<2>(&mut self.it)
-            .map(u16::from_be_bytes)
-            .ok_or(CursorError::UnexpectedEof)
-    }
-
-    pub fn i16(&mut self) -> Result<i16, CursorError> {
-        ByteCursor::take::<2>(&mut self.it)
-            .map(i16::from_be_bytes)
-            .ok_or(CursorError::UnexpectedEof)
+        Ok(buf)
     }
 
     pub fn u8(&mut self) -> Result<u8, CursorError> {
         self.it.next().ok_or(CursorError::UnexpectedEof)
+    }
+    pub fn i8(&mut self) -> Result<i8, CursorError> {
+        Ok(self.u8()? as i8)
+    }
+    pub fn u16(&mut self) -> Result<u16, CursorError> {
+        Ok(u16::from_be_bytes(self.take::<2>()?))
+    }
+    pub fn i16(&mut self) -> Result<i16, CursorError> {
+        Ok(i16::from_be_bytes(self.take::<2>()?))
+    }
+    pub fn u32(&mut self) -> Result<u32, CursorError> {
+        Ok(u32::from_be_bytes(self.take::<4>()?))
+    }
+    pub fn i32(&mut self) -> Result<i32, CursorError> {
+        Ok(i32::from_be_bytes(self.take::<4>()?))
+    }
+    pub fn u64(&mut self) -> Result<u64, CursorError> {
+        Ok(u64::from_be_bytes(self.take::<8>()?))
+    }
+    pub fn i64(&mut self) -> Result<i64, CursorError> {
+        Ok(i64::from_be_bytes(self.take::<8>()?))
     }
 
     pub fn try_u8(&mut self) -> Option<u8> {
